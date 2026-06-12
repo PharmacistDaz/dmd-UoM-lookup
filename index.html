@@ -445,4 +445,139 @@ const CONCEPTS = {
 function strip(term) {
   return term
     .replace(/\s*\(qualifier value\)\s*$/, '')
-    .replace(/
+    .replace(/\s*\(unit of presentation\)\s*$/, '')
+    .replace(/\s*\(unit of product usage\)\s*$/, '')
+    .replace(/\s*-\s*unit of product usage\s*$/, '')
+    .trim();
+}
+
+function typeOf(term) {
+  if (term.includes('unit of presentation')) return 'unit of presentation';
+  if (term.includes('unit of product usage')) return 'unit of product usage';
+  return 'qualifier value';
+}
+
+// Elastic search: score by how many query words appear anywhere in the term
+function elasticMatch(termLower, queryWords) {
+  return queryWords.every(w => termLower.includes(w));
+}
+
+function highlight(text, queryWords) {
+  let result = text;
+  queryWords.forEach(w => {
+    if (!w) return;
+    const re = new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    result = result.replace(re, '<mark class="match-highlight">$1</mark>');
+  });
+  return result;
+}
+
+function renderSingle(id, term, queryWords) {
+  const display = strip(term);
+  const type = typeOf(term);
+  const hl = queryWords ? highlight(display, queryWords) : display;
+  return `
+    <div class="result-card">
+      <div class="concept-pill">${id}</div>
+      <div class="term-name">${hl}</div>
+      <div class="meta-row">
+        <span class="badge">${type}</span>
+        <span class="full-term">${term}</span>
+      </div>
+    </div>`;
+}
+
+function renderList(matches, queryWords) {
+  const rows = matches.map(([id, term]) => {
+    const display = strip(term);
+    const hl = highlight(display, queryWords);
+    return `
+    <div class="match-item">
+      <div class="match-left">
+        <div class="match-term">${hl}</div>
+        <span class="match-badge">${typeOf(term)}</span>
+      </div>
+      <div class="match-id">${id}</div>
+    </div>`;
+  }).join('');
+  return `<div class="matches-label">${matches.length} result${matches.length !== 1 ? 's' : ''}</div><div class="match-list">${rows}</div>`;
+}
+
+function lookup(query) {
+  const content = document.getElementById('content');
+  const raw = query.trim();
+
+  if (!raw) {
+    content.innerHTML = '<p class="hint">Enter a concept ID or any word from a term name.<br>Matches anywhere in the term.</p>';
+    return;
+  }
+
+  if (/^\d+$/.test(raw)) {
+    const term = CONCEPTS[raw];
+    content.innerHTML = term
+      ? renderSingle(raw, term, null)
+      : `<div class="not-found-card"><p class="nf-title">Concept ID not found</p><p class="nf-body">${raw} is not in this dataset. Check via NHS TRUD dm+d release files.</p></div>`;
+  } else {
+    const queryWords = raw.toLowerCase().split(/\s+/).filter(Boolean);
+    const matches = Object.entries(CONCEPTS).filter(([, t]) =>
+      elasticMatch(strip(t).toLowerCase(), queryWords)
+    );
+    // Sort: exact start match first, then alphabetical
+    matches.sort(([,a],[,b]) => {
+      const as = strip(a).toLowerCase(), bs = strip(b).toLowerCase();
+      const aq = as.startsWith(queryWords[0]) ? 0 : 1;
+      const bq = bs.startsWith(queryWords[0]) ? 0 : 1;
+      if (aq !== bq) return aq - bq;
+      return as.localeCompare(bs);
+    });
+    if (!matches.length) {
+      content.innerHTML = `<div class="not-found-card"><p class="nf-title">No matches for "${raw}"</p><p class="nf-body">Try a different word or enter the numeric concept ID directly.</p></div>`;
+    } else if (matches.length === 1) {
+      content.innerHTML = renderSingle(matches[0][0], matches[0][1], queryWords);
+    } else {
+      content.innerHTML = renderList(matches, queryWords);
+    }
+  }
+}
+
+// Theme toggle
+const themeBtn = document.getElementById('theme-btn');
+
+function isDark() {
+  const t = document.documentElement.getAttribute('data-theme');
+  if (t === 'dark') return true;
+  if (t === 'light') return false;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  themeBtn.textContent = dark ? '☀️' : '🌙';
+}
+
+themeBtn.addEventListener('click', () => applyTheme(!isDark()));
+
+// Set correct icon on load
+applyTheme(isDark());
+
+const input = document.getElementById('search-input');
+const clearBtn = document.getElementById('clear-btn');
+
+input.addEventListener('input', () => lookup(input.value));
+clearBtn.addEventListener('click', () => { input.value = ''; lookup(''); input.focus(); });
+
+const params = new URL(window.location.href).searchParams;
+const seed = params.get('id') || params.get('term') || '';
+if (seed) input.value = seed;
+lookup(input.value);
+
+window.addEventListener('online',  () => { document.getElementById('offline-banner').style.display = 'none'; });
+window.addEventListener('offline', () => { document.getElementById('offline-banner').style.display = 'block'; });
+if (!navigator.onLine) document.getElementById('offline-banner').style.display = 'block';
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
