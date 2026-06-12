@@ -4,101 +4,445 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#185FA5">
-<meta name="description" content="NHS dm+d unit and qualifier lookup">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="dm+d">
+<meta name="theme-color" content="#185FA5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1923" media="(prefers-color-scheme: dark)">
+<meta name="description" content="NHS dm+d SNOMED CT unit and qualifier concept lookup">
 <link rel="manifest" href="manifest.json">
 <title>dm+d Lookup</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;min-height:100dvh;color:#1a1a1a;padding-bottom:env(safe-area-inset-bottom)}
-.app-header{background:#185FA5;color:#fff;padding:16px 20px 14px;padding-top:calc(16px + env(safe-area-inset-top));position:sticky;top:0;z-index:10}
-.app-header h1{font-size:17px;font-weight:600}
-.app-header p{font-size:12px;opacity:.75;margin-top:2px}
-.search-section{background:#fff;border-bottom:.5px solid #ddd;padding:12px 16px}
-.search-row{display:flex;gap:8px;align-items:center}
-.search-input{flex:1;font-size:16px;padding:11px 14px;border:1px solid #c8c5bc;border-radius:10px;background:#f8f9fa;color:#1a1a1a;outline:none;-webkit-appearance:none;min-height:44px}
-.search-input:focus{border-color:#185FA5;background:#fff;box-shadow:0 0 0 3px rgba(24,95,165,.12)}
-.search-input::placeholder{color:#aaa}
-.clear-btn{min-height:44px;min-width:44px;padding:0 14px;border:1px solid #c8c5bc;border-radius:10px;background:#f8f9fa;color:#5F5E5A;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.clear-btn:active{background:#e8e6e0}
-.content{padding:16px;padding-bottom:calc(32px + env(safe-area-inset-bottom))}
-.hint{font-size:14px;color:#888780;line-height:1.6;padding:8px 0}
-</style>
-<style>
-.result-card{background:#fff;border-radius:12px;border:.5px solid #e0ddd4;padding:16px;margin-top:4px}
-.concept-pill{display:inline-block;font-family:'SF Mono','Fira Code','Courier New',monospace;font-size:12px;color:#185FA5;background:#E6F1FB;border-radius:6px;padding:3px 8px;margin-bottom:10px}
-.term-name{font-size:22px;font-weight:600;color:#1a1a1a;line-height:1.3;margin-bottom:8px}
-.meta-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
-.badge{font-size:11px;font-weight:500;background:#EAF3DE;color:#3B6D11;padding:3px 9px;border-radius:20px}
-.full-term{font-size:13px;color:#888780}
-.not-found-card{background:#FCEBEB;border-radius:12px;border:.5px solid #f0c0c0;padding:16px;margin-top:4px}
-.not-found-card p:first-child{font-size:15px;font-weight:500;color:#A32D2D;margin-bottom:6px}
-.not-found-card p:last-child{font-size:13px;color:#c05050}
-.matches-label{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:#888780;margin-bottom:8px;padding-left:2px}
-.match-list{background:#fff;border-radius:12px;border:.5px solid #e0ddd4;overflow:hidden;margin-top:4px}
-.match-item{padding:13px 16px;border-bottom:.5px solid #eee;display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:56px}
-.match-item:last-child{border-bottom:none}
-.match-item:active{background:#f5f5f5}
-.match-left{flex:1;min-width:0}
-.match-term{font-size:15px;font-weight:500;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.match-badge{font-size:11px;font-weight:500;background:#EAF3DE;color:#3B6D11;padding:2px 7px;border-radius:20px;display:inline-block;margin-top:3px}
-.match-id{font-family:'SF Mono','Fira Code','Courier New',monospace;font-size:11px;color:#185FA5;background:#E6F1FB;border-radius:5px;padding:3px 7px;white-space:nowrap;flex-shrink:0}
-.offline-banner{display:none;background:#faeeda;color:#633806;font-size:13px;text-align:center;padding:8px 16px}
+:root {
+  --bg:          #f0f2f5;
+  --surface:     #ffffff;
+  --surface2:    #f8f9fa;
+  --border:      #e0ddd4;
+  --border2:     #ddd;
+  --text:        #1a1a1a;
+  --text2:       #5a5856;
+  --text3:       #999692;
+  --accent:      #185FA5;
+  --accent-bg:   #E6F1FB;
+  --accent-ring: rgba(24,95,165,.15);
+  --green-bg:    #EAF3DE;
+  --green-text:  #3B6D11;
+  --red-bg:      #FCEBEB;
+  --red-border:  #f0c0c0;
+  --red-text:    #A32D2D;
+  --red-text2:   #b85050;
+  --header-bg:   #185FA5;
+  --header-text: #ffffff;
+  --match-hover: #f5f5f3;
+  --pill-font:   'SF Mono','Fira Code','Courier New',monospace;
+}
+
+/* System dark mode default */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:          #0f1923;
+    --surface:     #1a2535;
+    --surface2:    #1f2d3d;
+    --border:      #2a3a4d;
+    --border2:     #2a3a4d;
+    --text:        #e8ecf0;
+    --text2:       #a0b0c0;
+    --text3:       #6a8098;
+    --accent:      #5ba3e0;
+    --accent-bg:   #1a2e42;
+    --accent-ring: rgba(91,163,224,.2);
+    --green-bg:    #1a2e1a;
+    --green-text:  #7ec87e;
+    --red-bg:      #2e1a1a;
+    --red-border:  #5a2a2a;
+    --red-text:    #e07070;
+    --red-text2:   #c07070;
+    --header-bg:   #0f1923;
+    --header-text: #e8ecf0;
+    --match-hover: #1f2d3d;
+  }
+}
+
+/* Manual dark override */
+:root[data-theme="dark"] {
+  --bg:          #0f1923;
+  --surface:     #1a2535;
+  --surface2:    #1f2d3d;
+  --border:      #2a3a4d;
+  --border2:     #2a3a4d;
+  --text:        #e8ecf0;
+  --text2:       #a0b0c0;
+  --text3:       #6a8098;
+  --accent:      #5ba3e0;
+  --accent-bg:   #1a2e42;
+  --accent-ring: rgba(91,163,224,.2);
+  --green-bg:    #1a2e1a;
+  --green-text:  #7ec87e;
+  --red-bg:      #2e1a1a;
+  --red-border:  #5a2a2a;
+  --red-text:    #e07070;
+  --red-text2:   #c07070;
+  --header-bg:   #0f1923;
+  --header-text: #e8ecf0;
+  --match-hover: #1f2d3d;
+}
+
+/* Manual light override */
+:root[data-theme="light"] {
+  --bg:          #f0f2f5;
+  --surface:     #ffffff;
+  --surface2:    #f8f9fa;
+  --border:      #e0ddd4;
+  --border2:     #ddd;
+  --text:        #1a1a1a;
+  --text2:       #5a5856;
+  --text3:       #999692;
+  --accent:      #185FA5;
+  --accent-bg:   #E6F1FB;
+  --accent-ring: rgba(24,95,165,.15);
+  --green-bg:    #EAF3DE;
+  --green-text:  #3B6D11;
+  --red-bg:      #FCEBEB;
+  --red-border:  #f0c0c0;
+  --red-text:    #A32D2D;
+  --red-text2:   #b85050;
+  --header-bg:   #185FA5;
+  --header-text: #ffffff;
+  --match-hover: #f5f5f3;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html { font-size: 18px; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  min-height: 100dvh;
+  color: var(--text);
+  padding-bottom: env(safe-area-inset-bottom);
+  transition: background 0.2s, color 0.2s;
+}
+
+/* ---- Header ---- */
+.app-header {
+  background: var(--header-bg);
+  color: var(--header-text);
+  padding: 18px 20px 14px;
+  padding-top: calc(18px + env(safe-area-inset-top));
+  padding-left: calc(20px + env(safe-area-inset-left));
+  padding-right: calc(20px + env(safe-area-inset-right));
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.header-left h1 {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.header-left p {
+  font-size: 0.7rem;
+  opacity: 0.65;
+  margin-top: 3px;
+  letter-spacing: 0.01em;
+}
+
+.theme-btn {
+  background: rgba(255,255,255,0.12);
+  border: none;
+  border-radius: 8px;
+  color: var(--header-text);
+  font-size: 1rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.theme-btn:active { background: rgba(255,255,255,0.22); }
+
+/* ---- Search ---- */
+.search-section {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border2);
+  padding: 14px 16px;
+  padding-left: calc(16px + env(safe-area-inset-left));
+  padding-right: calc(16px + env(safe-area-inset-right));
+}
+
+.search-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 1rem;
+  padding: 13px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  color: var(--text);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 50px;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.2s;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.search-input::placeholder { color: var(--text3); }
+
+.clear-btn {
+  min-height: 50px;
+  min-width: 50px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s;
+}
+.clear-btn:active { background: var(--border); }
+
+/* ---- Content ---- */
+.content {
+  padding: 16px;
+  padding-left: calc(16px + env(safe-area-inset-left));
+  padding-right: calc(16px + env(safe-area-inset-right));
+  padding-bottom: calc(40px + env(safe-area-inset-bottom));
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: var(--text3);
+  line-height: 1.7;
+  padding: 10px 2px;
+  text-align: center;
+}
+
+/* ---- Single result ---- */
+.result-card {
+  background: var(--surface);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  padding: 20px 18px 18px;
+  margin-top: 6px;
+}
+
+.concept-pill {
+  display: inline-block;
+  font-family: var(--pill-font);
+  font-size: 0.72rem;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-radius: 7px;
+  padding: 4px 10px;
+  margin-bottom: 14px;
+  letter-spacing: 0.02em;
+}
+
+.term-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+}
+
+.meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: var(--green-bg);
+  color: var(--green-text);
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+}
+
+.full-term {
+  font-size: 0.78rem;
+  color: var(--text3);
+  line-height: 1.5;
+}
+
+/* ---- Not found ---- */
+.not-found-card {
+  background: var(--red-bg);
+  border-radius: 14px;
+  border: 1px solid var(--red-border);
+  padding: 18px;
+  margin-top: 6px;
+}
+
+.not-found-card .nf-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--red-text);
+  margin-bottom: 6px;
+}
+
+.not-found-card .nf-body {
+  font-size: 0.8rem;
+  color: var(--red-text2);
+  line-height: 1.6;
+}
+
+/* ---- Match list ---- */
+.matches-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 8px;
+  padding-left: 4px;
+}
+
+.match-list {
+  background: var(--surface);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.match-item {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 62px;
+  transition: background 0.1s;
+}
+
+.match-item:last-child { border-bottom: none; }
+.match-item:active { background: var(--match-hover); }
+
+.match-left { flex: 1; min-width: 0; }
+
+.match-term {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.match-highlight {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+.match-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: var(--green-bg);
+  color: var(--green-text);
+  padding: 3px 8px;
+  border-radius: 20px;
+  display: inline-block;
+  letter-spacing: 0.02em;
+}
+
+.match-id {
+  font-family: var(--pill-font);
+  font-size: 0.65rem;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-radius: 6px;
+  padding: 4px 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ---- Offline banner ---- */
+.offline-banner {
+  display: none;
+  background: #2e2400;
+  color: #f0c060;
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 8px 16px;
+  letter-spacing: 0.01em;
+}
 </style>
 </head>
 <body>
-<div class="offline-banner" id="offline-banner">You are offline - results from local cache</div>
+
+<div class="offline-banner" id="offline-banner">Offline - showing cached data</div>
+
 <div class="app-header">
-  <h1>dm+d Lookup</h1>
-  <p>NHS unit / qualifier reference</p>
+  <div class="header-left">
+    <h1>dm+d Lookup</h1>
+    <p>NHS unit / qualifier reference</p>
+  </div>
+  <button class="theme-btn" id="theme-btn" aria-label="Toggle dark mode">🌙</button>
 </div>
+
 <div class="search-section">
   <div class="search-row">
-    <input class="search-input" id="search-input" type="search" inputmode="text" placeholder="Concept ID or term name..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"/>
-    <button class="clear-btn" id="clear-btn">&#x2715;</button>
+    <input
+      class="search-input"
+      id="search-input"
+      type="search"
+      inputmode="text"
+      placeholder="Concept ID or term name..."
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="none"
+      spellcheck="false"
+      aria-label="Search by concept ID or term"
+    />
+    <button class="clear-btn" id="clear-btn" aria-label="Clear">&#x2715;</button>
   </div>
 </div>
+
 <div class="content" id="content">
-  <p class="hint">Search by numeric concept ID or term name. Works offline once loaded.</p>
+  <p class="hint">Enter a concept ID or any word from a term name.<br>Matches anywhere in the term.</p>
 </div>
+
 <script>
-  const CONCEPTS = {
-"8091811000001107":"bandage (qualifier value)","700476008":"Enema - unit of product usage (qualifier value)","3317211000001104":"cycle (qualifier value)","10697511000001109":"SQ-Bet (qualifier value)","8090511000001102":"larva (qualifier value)","259022006":"Square centimeter (qualifier value)","259002007":"international unit/milliliter (qualifier value)","10697411000001105":"ampoule-pair (qualifier value)","3318311000001108":"pastille (qualifier value)","429587008":"Lozenge - unit of product usage (qualifier value)","10696111000001103":"elastomeric device (qualifier value)","3317011000001109":"carton (qualifier value)","429308001":"Can - unit of product usage (qualifier value)","3318211000001100":"pack (qualifier value)","10698511000001108":"test unit (qualifier value)","10696011000001104":"plaque forming units/ml (qualifier value)","10697211000001106":"SQ-U/ml (qualifier value)","408166008":"Milligrams/16 hours (qualifier value)","408165007":"Megainternational unit (qualifier value)","408164006":"International unit/milligram (qualifier value)","408163000":"International units per gram (qualifier value)","408162005":"Kilogram/liter (qualifier value)","408168009":"Milligram/gram (qualifier value)","408169001":"Milligram/milligram (qualifier value)","408167004":"Milligrams/72 hours (qualifier value)","408170000":"Micrograms/72 hours (qualifier value)","3318111000001106":"needle (qualifier value)","408107001":"Gram/actuation (qualifier value)","408106005":"Unit/actuation (qualifier value)","408105009":"Milligram/actuation (qualifier value)","408104008":"Microgram/actuation (qualifier value)","408102007":"Unit dose (qualifier value)","10695511000001100":"cell/square cm (qualifier value)","10368211000001101":"component (qualifier value)","10693011000001107":"SQ-T (qualifier value)","3317611000001102":"lancet (qualifier value)","425565005":"Blister - unit of product usage (qualifier value)","10696711000001102":"tera vector genome (qualifier value)","3318811000001104":"roll (qualifier value)","10697911000001102":"giga vector genome/ml (qualifier value)","10697811000001107":"giga vector genome (qualifier value)","10696611000001106":"vector genome/ml (qualifier value)","3316311000001109":"mmol/ml (qualifier value)","3319911000001101":"catheter (qualifier value)","3318711000001107":"device (qualifier value)","420401004":"Swab - unit of product usage (qualifier value)","3317411000001100":"dose (qualifier value)","10697711000001104":"%w/v (qualifier value)","3316211000001101":"obsolete-mM (qualifier value)","10696511000001107":"elastomeric device/ml (qualifier value)","10693911000001106":"teragenome copies (qualifier value)","10694011000001109":"teragenome copies/ml (qualifier value)","3318611000001103":"pre-filled disposable injection (qualifier value)","10697611000001108":"%v/v (qualifier value)","3316111000001107":"molar (qualifier value)","10695911000001107":"plaque forming units (qualifier value)","3316811000001100":"baguette (qualifier value)","10692211000001108":"application (qualifier value)","3321111000001109":"pot (qualifier value)","10695811000001102":"million plaque forming units/ml (qualifier value)","10368511000001103":"mega u/ml (qualifier value)","10695711000001105":"million plaque forming units (qualifier value)","10692011000001103":"unit/dose (qualifier value)","10696911000001100":"scoop (qualifier value)","10693211000001102":"Cell (qualifier value)","3317911000001108":"multipack (qualifier value)","3314211000001106":"No value - unit of measure (qualifier value)","10695611000001101":"cell/ml (qualifier value)","417932008":"Nanoliter/milliliter (qualifier value)","10696811000001105":"tera vector genome/ml (qualifier value)","417962002":"Kallikrein inhibitory unit per milliliter (qualifier value)","3317711000001106":"loaf (qualifier value)","10693111000001108":"Histamine Equivalent in Prick testing (qualifier value)","10692611000001105":"cigarette (qualifier value)","3321511000001100":"glove (qualifier value)","3320311000001101":"suture (qualifier value)","10692711000001101":"gram/gram (qualifier value)","10692511000001106":"tuberculin units/ML (qualifier value)","3315911000001103":"ml/l (qualifier value)","3321411000001104":"piece (qualifier value)"
+const CONCEPTS = {
+"8091811000001107":"bandage (qualifier value)","700476008":"Enema - unit of product usage (qualifier value)","3317211000001104":"cycle (qualifier value)","10697511000001109":"SQ-Bet (qualifier value)","8090511000001102":"larva (qualifier value)","259022006":"Square centimeter (qualifier value)","259002007":"international unit/milliliter (qualifier value)","10697411000001105":"ampoule-pair (qualifier value)","3318311000001108":"pastille (qualifier value)","429587008":"Lozenge - unit of product usage (qualifier value)","10696111000001103":"elastomeric device (qualifier value)","3317011000001109":"carton (qualifier value)","429308001":"Can - unit of product usage (qualifier value)","3318211000001100":"pack (qualifier value)","10698511000001108":"test unit (qualifier value)","10696011000001104":"plaque forming units/ml (qualifier value)","10697211000001106":"SQ-U/ml (qualifier value)","408166008":"Milligrams/16 hours (qualifier value)","408165007":"Megainternational unit (qualifier value)","408164006":"International unit/milligram (qualifier value)","408163000":"International units per gram (qualifier value)","408162005":"Kilogram/liter (qualifier value)","408168009":"Milligram/gram (qualifier value)","408169001":"Milligram/milligram (qualifier value)","408167004":"Milligrams/72 hours (qualifier value)","408170000":"Micrograms/72 hours (qualifier value)","3318111000001106":"needle (qualifier value)","408107001":"Gram/actuation (qualifier value)","408106005":"Unit/actuation (qualifier value)","408105009":"Milligram/actuation (qualifier value)","408104008":"Microgram/actuation (qualifier value)","408102007":"Unit dose (qualifier value)","10695511000001100":"cell/square cm (qualifier value)","10368211000001101":"component (qualifier value)","10693011000001107":"SQ-T (qualifier value)","3317611000001102":"lancet (qualifier value)","425565005":"Blister - unit of product usage (qualifier value)","10696711000001102":"tera vector genome (qualifier value)","3318811000001104":"roll (qualifier value)","10697911000001102":"giga vector genome/ml (qualifier value)","10697811000001107":"giga vector genome (qualifier value)","10696611000001106":"vector genome/ml (qualifier value)","3316311000001109":"mmol/ml (qualifier value)","3319911000001101":"catheter (qualifier value)","3318711000001107":"device (qualifier value)","420401004":"Swab - unit of product usage (qualifier value)","3317411000001100":"dose (qualifier value)","10697711000001104":"%w/v (qualifier value)","3316211000001101":"obsolete-mM (qualifier value)","10696511000001107":"elastomeric device/ml (qualifier value)","10693911000001106":"teragenome copies (qualifier value)","10694011000001109":"teragenome copies/ml (qualifier value)","3318611000001103":"pre-filled disposable injection (qualifier value)","10697611000001108":"%v/v (qualifier value)","3316111000001107":"molar (qualifier value)","10695911000001107":"plaque forming units (qualifier value)","3316811000001100":"baguette (qualifier value)","10692211000001108":"application (qualifier value)","3321111000001109":"pot (qualifier value)","10695811000001102":"million plaque forming units/ml (qualifier value)","10368511000001103":"mega u/ml (qualifier value)","10695711000001105":"million plaque forming units (qualifier value)","10692011000001103":"unit/dose (qualifier value)","10696911000001100":"scoop (qualifier value)","10693211000001102":"Cell (qualifier value)","3317911000001108":"multipack (qualifier value)","3314211000001106":"No value - unit of measure (qualifier value)","10695611000001101":"cell/ml (qualifier value)","417932008":"Nanoliter/milliliter (qualifier value)","10696811000001105":"tera vector genome/ml (qualifier value)","417962002":"Kallikrein inhibitory unit per milliliter (qualifier value)","3317711000001106":"loaf (qualifier value)","10693111000001108":"Histamine Equivalent in Prick testing (qualifier value)","10692611000001105":"cigarette (qualifier value)","3321511000001100":"glove (qualifier value)","3320311000001101":"suture (qualifier value)","10692711000001101":"gram/gram (qualifier value)","10692511000001106":"tuberculin units/ML (qualifier value)","3315911000001103":"ml/l (qualifier value)","3321411000001104":"piece (qualifier value)","418830004":"Unit/milligram (qualifier value)","418948007":"Megabecquerel/milliliter (qualifier value)","418931004":"Gigabecquerel (qualifier value)","10693811000001101":"leech (qualifier value)","10692411000001107":"mg/application (qualifier value)","421823004":"Pad - unit of product usage (qualifier value)","418261000":"Gigabecquerel/milliliter (qualifier value)","3314611000001108":"%v/w (qualifier value)","3321311000001106":"pizza base (qualifier value)","418342002":"Microliter/milliliter (qualifier value)","418530008":"Tube - unit of product usage (qualifier value)","10693711000001109":"unit/drop (qualifier value)","3320111000001103":"dressing (qualifier value)","10692311000001100":"g/application (qualifier value)","3314511000001109":"%w/w (qualifier value)","418042005":"Microgram/centimeter2 (qualifier value)","413516001":"Ampule - unit of product usage (qualifier value)","418081005":"kiloBecquerel/milliliter (qualifier value)","426198001":"Dual dose sachet - unit of product usage (qualifier value)","10693611000001100":"drop (qualifier value)","430293001":"Suppository - unit of product usage (qualifier value)","10691717000001108":"g/dose (qualifier value)","10691811000001108":"g/dose (qualifier value)","414719002":"Micromole/milliliter (qualifier value)","419179001":"Kit - unit of product usage (qualifier value)","10691718000001108":"mg/dose (qualifier value)","10691818000001100":"mg/dose (qualifier value)","10691811000001100":"mg/dose (qualifier value)","10692811000001109":"month supply (qualifier value)","3320411000001108":"truss (qualifier value)","10692911000001104":"week supply (qualifier value)","427678004":"Disc - unit of product usage (qualifier value)","8088511000001103":"microlitre/g (qualifier value)","419691006":"Unit/centimeter2 (qualifier value)","419672006":"Bottle - unit of product usage (qualifier value)","419702001":"Patch - unit of product usage (qualifier value)","10691911000001105":"microgram/dose (qualifier value)","419346007":"Milliliter/milliliter (qualifier value)","419805009":"Milliliter/gram (qualifier value)","396169007":"Gram/milliliter (qualifier value)","396163008":"Milligram/kilogram (qualifier value)","396180007":"mL/kg (qualifier value)","428178003":"Cup - unit of product usage (qualifier value)","415818006":"Vial - unit of product usage (qualifier value)","415784009":"Unit/gram (qualifier value)","415758003":"Tuberculin unit (qualifier value)","229034000":"Megabecquerel (qualifier value)","282143001":"Kilobecquerel (qualifier value)","428641000":"Capsule - unit of product usage (qualifier value)","428639001":"Insert - unit of product usage (qualifier value)","428672001":"Bag - unit of product usage (qualifier value)","428673006":"Tablet - unit of product usage (qualifier value)","282113003":"Nanoliter (qualifier value)","8091011000001101":"generator (qualifier value)","732995004":"Film (unit of presentation)","732992001":"Cylinder (unit of presentation)","732990009":"Container (unit of presentation)","732980001":"Applicator (unit of presentation)","732981002":"Actuation (unit of presentation)","732988008":"Cartridge (unit of presentation)","428003006":"Bar - unit of product usage (qualifier value)","10698211000001105":"cassette (qualifier value)","10697011000001101":"dose step (qualifier value)","10698311000001102":"million cells (qualifier value)","411225003":"Kallikrein inactivator unit (qualifier value)","3318011000001105":"nebule (qualifier value)","10697111000001100":"SQ-U (qualifier value)","10698411000001109":"million cells/ml (qualifier value)","8083511000001107":"mg/square cm (qualifier value)","767525000":"Unit (qualifier value)","10698011000001100":"million colony forming units (qualifier value)","3319011000001100":"stocking (qualifier value)","10698111000001104":"million colony forming units/ml (qualifier value)","258673006":"Millimeter (qualifier value)","258672001":"Centimeter (qualifier value)","258669008":"meter (qualifier value)","258685003":"microgram (qualifier value)","258684004":"milligram (qualifier value)","258686002":"nanogram (qualifier value)","258683005":"kilogram (qualifier value)","258682000":"gram (qualifier value)","258702006":"hour (qualifier value)","258794004":"Gram/liter (qualifier value)","258796002":"Milligram/liter (qualifier value)","258798001":"Milligram/milliliter (qualifier value)","258770004":"Liter (qualifier value)","258774008":"Microliter (qualifier value)","258773002":"Milliliter (qualifier value)","258718000":"millimole (qualifier value)","258719008":"micromole (qualifier value)","258731005":"Parts per million (qualifier value)","733015007":"Spoonful (unit of presentation)","733012005":"Pouch (unit of presentation)","733013000":"Sachet (unit of presentation)","733017004":"Straw (unit of presentation)","733018009":"Strip (unit of presentation)","733021006":"System (unit of presentation)","733020007":"Syringe (unit of presentation)","733007009":"Pessary (unit of presentation)","733008004":"Pillule (unit of presentation)","733010002":"Plaster (unit of presentation)","258840002":"Microgram/24 hours (qualifier value)","258838007":"Microgram/hour (qualifier value)","258836006":"Milligrams/24 hours (qualifier value)","258812007":"Mole/liter (qualifier value)","258813002":"Millimole/liter (qualifier value)","258801007":"Microgram/milliliter (qualifier value)","258802000":"Microgram/gram (qualifier value)","258806002":"Nanogram/milliliter (qualifier value)","258878000":"cells/microliter (qualifier value)","258948008":"Unit/milliliter (qualifier value)","258997004":"international unit (qualifier value)"
 };
-Object.assign(CONCEPTS, {
-"418830004":"Unit/milligram (qualifier value)","418948007":"Megabecquerel/milliliter (qualifier value)","418931004":"Gigabecquerel (qualifier value)","10693811000001101":"leech (qualifier value)","10692411000001107":"mg/application (qualifier value)","421823004":"Pad - unit of product usage (qualifier value)","418261000":"Gigabecquerel/milliliter (qualifier value)","3314611000001108":"%v/w (qualifier value)","3321311000001106":"pizza base (qualifier value)","418342002":"Microliter/milliliter (qualifier value)","418530008":"Tube - unit of product usage (qualifier value)","10693711000001109":"unit/drop (qualifier value)","3320111000001103":"dressing (qualifier value)","10692311000001100":"g/application (qualifier value)","3314511000001109":"%w/w (qualifier value)","418042005":"Microgram/centimeter2 (qualifier value)","413516001":"Ampule - unit of product usage (qualifier value)","418081005":"kiloBecquerel/milliliter (qualifier value)","426198001":"Dual dose sachet - unit of product usage (qualifier value)","10693611000001100":"drop (qualifier value)","430293001":"Suppository - unit of product usage (qualifier value)","10691717000001108":"g/dose (qualifier value)","10691811000001108":"g/dose (qualifier value)","414719002":"Micromole/milliliter (qualifier value)","419179001":"Kit - unit of product usage (qualifier value)","10691718000001108":"mg/dose (qualifier value)","10691818000001100":"mg/dose (qualifier value)","10691811000001100":"mg/dose (qualifier value)","10692811000001109":"month supply (qualifier value)","3320411000001108":"truss (qualifier value)","10692911000001104":"week supply (qualifier value)","427678004":"Disc - unit of product usage (qualifier value)","8088511000001103":"microlitre/g (qualifier value)","419691006":"Unit/centimeter2 (qualifier value)","419672006":"Bottle - unit of product usage (qualifier value)","419702001":"Patch - unit of product usage (qualifier value)","10691911000001105":"microgram/dose (qualifier value)","419346007":"Milliliter/milliliter (qualifier value)","419805009":"Milliliter/gram (qualifier value)","396169007":"Gram/milliliter (qualifier value)","396163008":"Milligram/kilogram (qualifier value)","396180007":"mL/kg (qualifier value)","428178003":"Cup - unit of product usage (qualifier value)","415818006":"Vial - unit of product usage (qualifier value)","415784009":"Unit/gram (qualifier value)","415758003":"Tuberculin unit (qualifier value)","229034000":"Megabecquerel (qualifier value)","282143001":"Kilobecquerel (qualifier value)","428641000":"Capsule - unit of product usage (qualifier value)","428639001":"Insert - unit of product usage (qualifier value)","428672001":"Bag - unit of product usage (qualifier value)","428673006":"Tablet - unit of product usage (qualifier value)","282113003":"Nanoliter (qualifier value)","8091011000001101":"generator (qualifier value)","732995004":"Film (unit of presentation)","732992001":"Cylinder (unit of presentation)","732990009":"Container (unit of presentation)","732980001":"Applicator (unit of presentation)","732981002":"Actuation (unit of presentation)","732988008":"Cartridge (unit of presentation)","428003006":"Bar - unit of product usage (qualifier value)","10698211000001105":"cassette (qualifier value)","10697011000001101":"dose step (qualifier value)","10698311000001102":"million cells (qualifier value)","411225003":"Kallikrein inactivator unit (qualifier value)","3318011000001105":"nebule (qualifier value)","10697111000001100":"SQ-U (qualifier value)","10698411000001109":"million cells/ml (qualifier value)","8083511000001107":"mg/square cm (qualifier value)","767525000":"Unit (qualifier value)","10698011000001100":"million colony forming units (qualifier value)","3319011000001100":"stocking (qualifier value)","10698111000001104":"million colony forming units/ml (qualifier value)","258673006":"Millimeter (qualifier value)","258672001":"Centimeter (qualifier value)","258669008":"meter (qualifier value)","258685003":"microgram (qualifier value)","258684004":"milligram (qualifier value)","258686002":"nanogram (qualifier value)","258683005":"kilogram (qualifier value)","258682000":"gram (qualifier value)","258702006":"hour (qualifier value)","258794004":"Gram/liter (qualifier value)","258796002":"Milligram/liter (qualifier value)","258798001":"Milligram/milliliter (qualifier value)","258770004":"Liter (qualifier value)","258774008":"Microliter (qualifier value)","258773002":"Milliliter (qualifier value)","258718000":"millimole (qualifier value)","258719008":"micromole (qualifier value)","258731005":"Parts per million (qualifier value)","733015007":"Spoonful (unit of presentation)","733012005":"Pouch (unit of presentation)","733013000":"Sachet (unit of presentation)","733017004":"Straw (unit of presentation)","733018009":"Strip (unit of presentation)","733021006":"System (unit of presentation)","733020007":"Syringe (unit of presentation)","733007009":"Pessary (unit of presentation)","733008004":"Pillule (unit of presentation)","733010002":"Plaster (unit of presentation)","258840002":"Microgram/24 hours (qualifier value)","258838007":"Microgram/hour (qualifier value)","258836006":"Milligrams/24 hours (qualifier value)","258812007":"Mole/liter (qualifier value)","258813002":"Millimole/liter (qualifier value)","258801007":"Microgram/milliliter (qualifier value)","258802000":"Microgram/gram (qualifier value)","258806002":"Nanogram/milliliter (qualifier value)","258878000":"cells/microliter (qualifier value)","258948008":"Unit/milliliter (qualifier value)","258997004":"international unit (qualifier value)"
-});
-function strip(term){return term.replace(/\s*\(qualifier value\)\s*$/,'').replace(/\s*\(unit of presentation\)\s*$/,'').replace(/\s*\(unit of product usage\)\s*$/,'').replace(/\s*-\s*unit of product usage\s*$/,'').trim()}
-function typeOf(term){if(term.includes('unit of presentation'))return 'unit of presentation';if(term.includes('unit of product usage'))return 'unit of product usage';return 'qualifier value'}
-function renderSingle(id,term){const d=strip(term),t=typeOf(term);return `<div class="result-card"><div class="concept-pill">${id}</div><div class="term-name">${d}</div><div class="meta-row"><span class="badge">${t}</span><span class="full-term">${term}</span></div></div>`}
-function renderList(matches){const rows=matches.map(([id,term])=>`<div class="match-item"><div class="match-left"><div class="match-term">${strip(term)}</div><span class="match-badge">${typeOf(term)}</span></div><div class="match-id">${id}</div></div>`).join('');return `<div class="matches-label">${matches.length} matches</div><div class="match-list">${rows}</div>`}
-function lookup(query){
-  const content=document.getElementById('content');
-  const raw=query.trim();
-  if(!raw){content.innerHTML='<p class="hint">Search by numeric concept ID or term name. Works offline once loaded.</p>';return}
-  if(/^\d+$/.test(raw)){
-    const term=CONCEPTS[raw];
-    content.innerHTML=term?renderSingle(raw,term):`<div class="not-found-card"><p>Concept ID not found</p><p>${raw} is not in this dataset. Check via NHS TRUD dm+d release files.</p></div>`
-  } else {
-    const q=raw.toLowerCase();
-    const matches=Object.entries(CONCEPTS).filter(([,t])=>strip(t).toLowerCase().includes(q));
-    if(!matches.length){content.innerHTML=`<div class="not-found-card"><p>No matches for "${raw}"</p><p>Try a partial word or enter the numeric concept ID directly.</p></div>`}
-    else if(matches.length===1){content.innerHTML=renderSingle(matches[0][0],matches[0][1])}
-    else{content.innerHTML=renderList(matches)}
-  }
-}
-const input=document.getElementById('search-input');
-const clearBtn=document.getElementById('clear-btn');
-input.addEventListener('input',()=>lookup(input.value));
-clearBtn.addEventListener('click',()=>{input.value='';lookup('');input.focus()});
-const params=new URL(window.location.href).searchParams;
-const seed=params.get('id')||params.get('term')||'';
-if(seed)input.value=seed;
-lookup(input.value);
-window.addEventListener('online',()=>{document.getElementById('offline-banner').style.display='none'});
-window.addEventListener('offline',()=>{document.getElementById('offline-banner').style.display='block'});
-if(!navigator.onLine)document.getElementById('offline-banner').style.display='block';
-if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
-</script>
-</body>
-</html>
+
+function strip(term) {
+  return term
+    .replace(/\s*\(qualifier value\)\s*$/, '')
+    .replace(/
